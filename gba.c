@@ -1,5 +1,13 @@
 #include "gba.h"
 
+//arena dimensions
+extern int arenaWidth, arenaHeight; // dimensions
+extern int arenaX, arenaY; // location
+
+extern int topBound, lBound = 8;
+extern int botBound = SCREENHEIGHT - 8;
+extern int rBound = SCREENWIDTH - 8;  // player movement bounds
+
 // Pointer to the start of video memory
 volatile unsigned short *videoBuffer = (unsigned short *)0x6000000;
 
@@ -19,17 +27,46 @@ void fillScreen(unsigned short color) {
     }
 }
 
-startState() {
-    drawRect(8, 8, SCREENWIDTH - 16, SCREENHEIGHT - 16, PBLUE);
-    drawString(SCREENWIDTH / 4, 12, "JEZZBALL", LIGHTBLUE);
-    drawString(SCREENWIDTH / 4, 148, "press start", LIGHTBLUE);
+void drawText() {
+    drawString(15, 15, "o o o", WHITE);
+    //drawString(SCREENWIDTH / 4, 148, "press start", LIGHTBLUE);
 }
 
-drawStart() {
+void drawStart() {
     // drawRect(48, 6, 100, 50, DARKGRAY);
     // drawRect(24, 148, 100, 50, DARKGRAY);
     drawRect(8, 8, SCREENWIDTH - 16, SCREENHEIGHT - 16, PBLUE);
     drawRect(11, 11, SCREENWIDTH - 22, SCREENHEIGHT - 22, LIGHTBLUE);
+}
+
+void newVertBound(int x, int y, int length) {
+    drawRect(x, y, 3, length, PBLUE); // draws the line left by player in dark blue
+}
+
+void newHorzBound(int x, int y, int width) {
+    drawRect(x, y, 3, width, PBLUE);
+
+}
+void drawUp(int x, int y, int height ) {
+    drawRect(x, y, 3, height, PBLUE);
+}
+
+void drawRight(int x, int y, int length) {
+    drawRect(x, y, length, 3, PBLUE);
+}
+
+void drawLeft(int x, int y, int length) {
+    drawRect(x + 3, y + 3, length, 3, PBLUE);
+}
+
+void shrinkWidth(int startX, int startY, int pX, int pY, int aHeight) {
+    drawRect(startX, 0, pX, pY, DARKGRAY);
+    drawRect(pX, pY, 3, aHeight, PBLUE);
+}
+
+void shrinkHeight(int startX, int startY, int pX, int pY, int aWidth) {
+    drawRect(0, startY, pX, pY, DARKGRAY);
+    drawRect(startX, startY, aWidth, 3, PBLUE);
 }
 
 // Checks for collision between two rectangles

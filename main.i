@@ -251,29 +251,39 @@ void drawBall();
 void drawPlayer();
 void initialize();
 void updateBall();
-void update();
+void updatePlayer();
+void shrinkWidth(int startX, int width, int height, int arenaHeight);
+void shrinkHeight(int startY, int width, int height, int arenaWidth);
 
 
 unsigned short buttons;
 unsigned short oldButtons;
 
 
+int lives = 3;
+
+
 int time;
-int ballSize, pX, pY, pVx, pVy;
-int prevX, prevY;
+int bSize, bX, bY, bVx, bVy;
+int oldBX, oldBY;
 
 
-int playerSize, playerX, playerY, prevPlayerX, prevPlayerY;
+int pSize, pX, pY, oldPX, oldPY, pVx, pVy, startX, startY;
+void drawLeft();
+void drawRight();
+void drawUp();
+void drawDown();
 
 
 int arenaWidth, arenaHeight;
-int arenaX, arenaY = 11;
+int arenaX, arenaY;
 int padding;
 u16 arenaColor = ((24&31) | (24&31) << 5 | (31&31) << 10);
 u16 paddingColor = ((14&31) | (14&31) << 5 | (21&31) << 10);
 
 
-int topBound, botBound, lBound, rBound = 8;
+int topBound, botBound, lBound, rBound;
+
 
 int main() {
 
@@ -281,28 +291,26 @@ int main() {
  mgba_printf("debugging initialized");
 
     initialize();
+    drawStart();
 
+    while (1) {
 
-
-        drawStart();
-
-        while (1) {
-
-            if (time % skipFrames == 0) {
-                updateBall();
-            }
-            update();
-
-            oldButtons = buttons;
-            buttons = (*(volatile unsigned short *)0x04000130);
-
-            waitForVBlank();
-            drawBall();
-            drawPlayer();
-            time++;
+        if (time % skipFrames == 0) {
+            updateBall();
         }
-        return 0;
+        updatePlayer();
 
+        oldButtons = buttons;
+        buttons = (*(volatile unsigned short *)0x04000130);
+
+        waitForVBlank();
+        drawBall();
+        drawPlayer();
+        drawText();
+
+        time++;
+    }
+    return 0;
 }
 
 void initialize() {
@@ -310,100 +318,164 @@ void initialize() {
 
     skipFrames = 2;
     time = 0;
-    ballSize = 3;
-    pX = 240 / 2;
-    pY = 160 / 2;
-    pVx = 1;
-    pVy = 1;
+    bSize = 3;
+    bX = 240 / 2;
+    bY = 160 / 2;
+    bVx = 1;
+    bVy = 1;
 
     padding = 3;
     arenaHeight = 160 - 22;
     arenaWidth = 240 - 22;
+    arenaX = 11;
+    arenaY = 11;
 
-    playerSize = 3;
-    playerX = 8;
-    playerY = 8;
-    prevPlayerX = playerX;
-    prevPlayerY = playerY;
-
-    pX = 240 / 2;
-    pY = 160 / 2;
-    prevX = pX;
-    prevY = pY;
-    pVx = 1;
+    pSize = 3;
+    pX = 8;
+    pY = 8;
+    oldPX = pX;
+    oldPY = pY;
+    pVx = 0;
     pVy = 1;
+
+    bX = 240 / 2;
+    bY = 160 / 2;
+    oldBX = bX;
+    oldBY = bY;
+    bVx = 1;
+    bVy = 1;
 
 
     fillScreen(((5&31) | (5&31) << 5 | (5&31) << 10));
-
 }
 
 void updateBall() {
 
-    prevX = pX;
-    prevY = pY;
-    pX += pVx;
-    pY += pVy;
+    oldBX = bX;
+    oldBY = bY;
+    bX += bVx;
+    bY += bVy;
 
-    if (pX <= (arenaX + padding)) {
-        pX = padding + (padding - pX) + 1;
-        pVx = -pVx;
+    if (bX < arenaX) {
+        bX = (arenaX - bSize) + bX;
+        bVx = -bVx;
     }
-    if (pY <= (arenaY + padding)) {
-        pY = padding + (padding - pY) + 1;
-        pVy = -pVy;
+    if (bY < (arenaY)) {
+        bY = (arenaY - bSize) + bY;
+        bVy = -bVy;
     }
-    if (pX + ballSize >= (arenaX + arenaWidth)) {
-        pX -= pX + ballSize - (arenaX + arenaWidth);
-        pVx = -pVx;
+    if (bX + bSize >= (arenaX + arenaWidth)) {
+        bX -= bX + bSize - (arenaX + arenaWidth);
+        bVx = -bVx;
     }
-    if (pY + ballSize >= (arenaY + arenaHeight)) {
-        pY -= pY + ballSize - (arenaY + arenaHeight);
-        pVy = -pVy;
+    if (bY + bSize >= (arenaY + arenaHeight)) {
+        bY -= bY + bSize - (arenaY + arenaHeight);
+        bVy = -bVy;
     }
 }
 
-void update() {
+void updatePlayer() {
 
+    oldPX = pX;
+    oldPY = pY;
 
-    int playerSpeed = 1;
-    if (((~((*(volatile unsigned short *)0x04000130)) & ((1<<4)))) || (!(~(oldButtons) & ((1<<4))) && (~(*(volatile unsigned short *)0x04000130) & ((1<<4))))) {
-  playerX = prevPlayerX + playerSpeed;
- }
- if (((~((*(volatile unsigned short *)0x04000130)) & ((1<<5)))) || (!(~(oldButtons) & ((1<<5))) && (~(*(volatile unsigned short *)0x04000130) & ((1<<5))))) {
-  playerX = prevPlayerX - playerSpeed;
- }
- if (((~((*(volatile unsigned short *)0x04000130)) & ((1<<6)))) || (!(~(oldButtons) & ((1<<6))) && (~(*(volatile unsigned short *)0x04000130) & ((1<<6))))) {
-  playerY = prevPlayerY - playerSpeed;
- }
- if (((~((*(volatile unsigned short *)0x04000130)) & ((1<<7)))) || (!(~(oldButtons) & ((1<<7))) && (~(*(volatile unsigned short *)0x04000130) & ((1<<7))))) {
-  playerY = prevPlayerY + playerSpeed;
- }
+    if ((pX == arenaX - padding) && (pY < arenaY + arenaHeight)) {
+        if (!(!(~(oldButtons) & ((1<<0))) && (~(*(volatile unsigned short *)0x04000130) & ((1<<0))))) {
+            pVx = 0;
+            pVy = 1;
+            pY += pVy;
+        } else if ((!(~(oldButtons) & ((1<<0))) && (~(*(volatile unsigned short *)0x04000130) & ((1<<0))))){
+            pX++;
+        }
+    }
 
+    if (pX >= arenaX - padding + 1) {
+        startX = pX;
+        startY = pY;
+        if (!(collision(bX, bY, bSize, bSize, pX, pY, pSize, pSize))) {
+            pX++;
+            pVy = 0;
+            if (collision(pX, pY, pSize, pSize, arenaX + arenaWidth, pY, 1, pSize)) {
 
- if (playerX < lBound) {
-  playerX = lBound;
- }
- if (playerX + playerSize > 240 - rBound) {
-  playerX = 240 - (playerSize + rBound);
- }
- if (playerY < topBound) {
-  playerY = topBound;
- }
- if (playerY + playerSize > 160 - botBound) {
-  playerY = 160 - (playerSize + botBound);
- }
+                mgba_printf("hit the other side");
+                if (bY > pY) {
+                    shrinkHeight(startX, startY, pX + pSize, 160 - pY, arenaWidth);
+                    botBound = pY;
+                    arenaHeight -= pY;
+                } else {
+                    shrinkHeight(startX, 0, pX + pSize, arenaHeight - pY, arenaWidth);
+                    topBound = topBound - startY;
+                    arenaHeight -= pY;
+                }
+            }
+        } else {
+            mgba_printf("hit the box");
+            pX = startX - 1;
+            lives--;
+        }
 }
+
+    if ((pY == arenaY + arenaHeight) && (pX != arenaX + arenaWidth)) {
+        pVx = 1;
+        pVy = 0;
+        pX += pVx;
+    }
+    if ((pX >= arenaX + arenaWidth) && (pY < arenaY - padding)) {
+        pVx = 0;
+        pVy = 1;
+        pY -= pVy;
+    }
+    if ((pY == arenaY - padding -1) && (pX > arenaX - padding)) {
+         pVx = 1;
+         pVy = 0;
+         pX -= pVx;
+    }
+
+
+ if (pX < lBound) {
+  pX = lBound;
+ }
+ if (pX + pSize > rBound) {
+  pX = (rBound - pSize);
+        pY--;
+  }
+ if (pY < ((arenaY - padding) + topBound)) {
+  pY = (arenaY - padding) + topBound;
+ }
+ if (pY + pSize > botBound) {
+  pY = (botBound - pSize);
+ }
+
+
+
+    switch(lives) {
+        case 3:
+            break;
+        case 2:
+            drawString(15, 15, "    o", ((24&31) | (24&31) << 5 | (31&31) << 10));
+            break;
+        case 1:
+            drawString(15, 15, "  o o", ((24&31) | (24&31) << 5 | (31&31) << 10));
+            break;
+        case 0:
+            drawString(15, 15, "o o o", ((24&31) | (24&31) << 5 | (31&31) << 10));
+            drawRect(20, 20, 100, 40, ((14&31) | (14&31) << 5 | (21&31) << 10));
+            drawString(30, 30, "you lose :( restart application to play again", ((31&31) | (31&31) << 5 | (31&31) << 10));
+            break;
+    }
+}
+
 
 void drawBall() {
-    drawRect(prevX, prevY, ballSize, ballSize, ((24&31) | (24&31) << 5 | (31&31) << 10));
-    drawRect(pX, pY, ballSize, ballSize, ((31&31) | (0&31) << 5 | (0&31) << 10));
+    drawRect(oldBX, oldBY, bSize, bSize, ((24&31) | (24&31) << 5 | (31&31) << 10));
+    drawRect(bX, bY, bSize, bSize, ((31&31) | (0&31) << 5 | (0&31) << 10));
 }
 
 void drawPlayer() {
-    drawRect(prevPlayerX, prevPlayerY, playerSize, playerSize, ((14&31) | (14&31) << 5 | (21&31) << 10));
-    drawRect(playerX, playerY, playerSize, playerSize, ((31&31) | (31&31) << 5 | (31&31) << 10));
 
-    prevPlayerX = playerX;
-    prevPlayerY = playerY;
+    drawRect(oldPX, oldPY, pSize, pSize, ((14&31) | (14&31) << 5 | (21&31) << 10));
+    drawRect(pX, pY, pSize, pSize, ((31&31) | (31&31) << 5 | (31&31) << 10));
+
+    oldPX = pX;
+    oldPY = pY;
 }
