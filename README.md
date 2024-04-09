@@ -1,6 +1,6 @@
 ## hw2 for cs 2261 at gatech ##
 
-#JEZZBALL RULES
+# JEZZBALL RULES
 
 The goal of the game is to capture the enemy ball (red) in a space no larger than 25 by 25px. The player (white), will move within the confines of the arena boundary (dark blue), and can draw perpendicular lines that will make the boundary smaller at any point by pressing A.
 
